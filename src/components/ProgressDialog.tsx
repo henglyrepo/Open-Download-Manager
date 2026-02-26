@@ -2,16 +2,17 @@ import { X, Pause, Play, Square } from 'lucide-react';
 import { useDownloadStore } from '../stores/downloadStore';
 import { invoke } from '@tauri-apps/api/core';
 
-function formatSpeed(bytesPerSec: number): string {
-  if (bytesPerSec === 0) return '0 B/s';
+function formatSpeed(bytesPerSec: number | undefined | null): string {
+  if (!bytesPerSec || bytesPerSec <= 0) return '0 B/s';
   const k = 1024;
-  const sizes = ['B', 'KB', 'MB', 'GB'];
+  const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytesPerSec) / Math.log(k));
+  if (i < 0 || i >= sizes.length) return '0 B/s';
   return parseFloat((bytesPerSec / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i] + '/s';
 }
 
-function formatTime(seconds: number): string {
-  if (seconds <= 0) return '--:--';
+function formatTime(seconds: number | undefined | null): string {
+  if (!seconds || seconds <= 0) return '--:--';
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);

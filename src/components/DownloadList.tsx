@@ -5,26 +5,27 @@ import { Download } from '../types/download';
 import { ContextMenu } from './ContextMenu';
 import { invoke } from '@tauri-apps/api/core';
 
-function formatFileSize(bytes: number): string {
-  if (bytes === 0) return '0 B';
+function formatFileSize(bytes: number | undefined | null): string {
+  if (!bytes || bytes <= 0) return '-';
   const k = 1024;
   const sizes = ['B', 'KB', 'MB', 'GB', 'TB'];
   const i = Math.floor(Math.log(bytes) / Math.log(k));
+  if (i < 0 || i >= sizes.length) return '-';
   return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
 }
 
-function formatSpeed(bytesPerSec: number): string {
-  if (bytesPerSec === 0) return '0 B/s';
+function formatSpeed(bytesPerSec: number | undefined | null): string {
+  if (!bytesPerSec || bytesPerSec <= 0) return '-';
   return formatFileSize(bytesPerSec) + '/s';
 }
 
-function formatPercent(downloaded: number, total: number): string {
-  if (total === 0) return '0%';
+function formatPercent(downloaded: number | undefined | null, total: number | undefined | null): string {
+  if (!downloaded || !total || total <= 0) return '0%';
   return Math.round((downloaded / total) * 100) + '%';
 }
 
-function formatETA(seconds: number, speed: number): string {
-  if (speed <= 0 || seconds <= 0) return '--:--';
+function formatETA(seconds: number | undefined | null, speed: number | undefined | null): string {
+  if (!speed || speed <= 0 || !seconds || seconds <= 0) return '--:--';
   const hrs = Math.floor(seconds / 3600);
   const mins = Math.floor((seconds % 3600) / 60);
   const secs = Math.floor(seconds % 60);
@@ -34,9 +35,9 @@ function formatETA(seconds: number, speed: number): string {
   return `${mins}:${secs.toString().padStart(2, '0')}`;
 }
 
-function formatSizeDetail(downloaded: number, total: number): string {
-  if (total === 0) return '-';
-  return `${formatFileSize(downloaded)} / ${formatFileSize(total)}`;
+function formatSizeDetail(downloaded: number | undefined | null, total: number | undefined | null): string {
+  if (!total || total <= 0) return '-';
+  return `${formatFileSize(downloaded || 0)} / ${formatFileSize(total)}`;
 }
 
 function getStatusIcon(status: Download['status']) {

@@ -13,8 +13,8 @@ import { Download, ChunkProgress } from './types/download';
 
 interface DownloadProgressEvent {
   id: string;
-  downloaded: number;
-  total: number;
+  downloaded_size: number;
+  total_size: number;
   speed: number;
   chunks: ChunkProgress[];
 }
@@ -38,10 +38,10 @@ export default function App() {
 
   useEffect(() => {
     const unlistenProgress = listen<DownloadProgressEvent>('download-progress', (event) => {
-      const { id, downloaded, total, speed, chunks } = event.payload;
+      const { id, downloaded_size, total_size, speed, chunks } = event.payload;
       updateDownload(id, {
-        downloadedSize: downloaded,
-        totalSize: total,
+        downloadedSize: downloaded_size,
+        totalSize: total_size,
         speed,
         chunks,
       });
