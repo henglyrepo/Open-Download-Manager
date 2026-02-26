@@ -33,8 +33,39 @@ interface DownloadEvent {
 }
 
 export default function App() {
-  const { addDownload, updateDownload, removeDownload, selectedId, setAddDialogOpen } = useDownloadStore();
+  const { addDownload, updateDownload, removeDownload, selectedId, setAddDialogOpen, setDownloads } = useDownloadStore();
   const [completedDownload, setCompletedDownload] = useState<Download | null>(null);
+
+  // Load saved downloads on startup
+  useEffect(() => {
+    const loadSavedDownloads = async () => {
+      try {
+        const savedDownloads = await invoke<any[]>('get_all_downloads');
+        if (savedDownloads && savedDownloads.length > 0) {
+          const downloads: Download[] = savedDownloads.map((d: any) => ({
+            id: d.id,
+            url: d.url,
+            filename: d.filename,
+            filepath: d.filepath,
+            totalSize: d.totalSize,
+            downloadedSize: d.downloadedSize,
+            speed: d.speed,
+            status: d.status,
+            chunks: d.chunks || [],
+            createdAt: new Date().toISOString(),
+            resumeSupported: d.resumeSupported,
+            error: d.error,
+          }));
+          setDownloads(downloads);
+          console.log('Loaded', downloads.length, 'saved downloads');
+        }
+      } catch (err) {
+        console.error('Failed to load saved downloads:', err);
+      }
+    };
+
+    loadSavedDownloads();
+  }, [setDownloads]);
 
   useEffect(() => {
     const unlistenProgress = listen<DownloadProgressEvent>('download-progress', (event) => {

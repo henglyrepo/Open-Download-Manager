@@ -296,6 +296,46 @@ async fn browse_folder() -> Result<Option<String>, String> {
         .unwrap_or_else(|| "C:\\Downloads".to_string())))
 }
 
+#[tauri::command]
+async fn get_all_downloads(state: tauri::State<'_, AppState>) -> Result<Vec<serde_json::Value>, String> {
+    let manager = state.download_manager.lock().await;
+    let downloads = manager.get_downloads().await;
+    
+    let result: Vec<serde_json::Value> = downloads.into_iter().map(|d| {
+        serde_json::json!({
+            "id": d.id,
+            "url": d.url,
+            "filename": std::path::Path::new(&d.filepath)
+                .file_name()
+                .map(|n| n.to_string_lossy().to_string())
+                .unwrap_or_default(),
+            "filepath": d.filepath,
+            "totalSize": d.total_size,
+            "downloadedSize": d.downloaded,
+            "speed": d.speed,
+            "status": match d.status {
+                download::DownloadStatus::Queued => "queued",
+                download::DownloadStatus::Downloading => "downloading",
+                download::DownloadStatus::Paused => "paused",
+                download::DownloadStatus::Completed => "completed",
+                download::DownloadStatus::Error => "error",
+            },
+            "chunks": d.chunks.iter().map(|c| {
+                serde_json::json!({
+                    "id": c.id,
+                    "downloaded": c.downloaded,
+                    "total": c.end - c.start + 1,
+                    "speed": c.speed,
+                })
+            }).collect::<Vec<_>>(),
+            "resumeSupported": true,
+            "error": d.error_message,
+        })
+    }).collect();
+    
+    Ok(result)
+}
+
 #[cfg_attr(mobile, tauri::mobile_entry_point)]
 pub fn run() {
     tauri::Builder::default()
@@ -331,6 +371,7 @@ pub fn run() {
             open_file,
             copy_to_clipboard,
             browse_folder,
+            get_all_downloads,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

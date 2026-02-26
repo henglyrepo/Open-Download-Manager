@@ -96,9 +96,19 @@ npm run tauri build
 - Real-time speed calculation (bytes/second)
 
 ### Pause/Resume
-- Save download state to SQLite on pause
-- On resume, read saved byte offsets
-- Request remaining range from server
+- Cancellation tokens for immediate stop of HTTP requests
+- On pause: saves current chunk progress to `.progress_{chunk_id}` files
+- On resume: reads saved progress and requests remaining range from server
+
+### Crash-Safe Progress
+- Periodic progress saving every 5 seconds during download
+- Progress files (`.progress_{chunk_id}`) store downloaded bytes per chunk
+- On crash/restart: detects partial chunks and resumes from saved positions
+
+### Smart Retries
+- Exponential backoff retry logic (MAX_RETRIES=5)
+- Backoff sequence: 1s → 2s → 4s → 8s → 16s → 32s → 60s (max)
+- Automatic retry on network errors, timeouts, and HTTP 5xx errors
 
 ### Categories
 - **All** - All downloads

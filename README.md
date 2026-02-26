@@ -70,6 +70,8 @@ OpenDM is an open-source download manager designed to be a free, high-performanc
 | Chunk Visualization | ✅ Stable | Individual chunk progress display |
 | Download Categories | ✅ Stable | Organize by All/Downloading/Completed/Queued |
 | System Tray | ✅ Stable | Minimize to system tray |
+| Crash-Safe Progress | ✅ Stable | Periodic saves every 5s, resume after crash |
+| Smart Retries | ✅ Stable | Exponential backoff (1s→60s), max 5 retries |
 
 ### Upcoming Features
 
@@ -169,6 +171,8 @@ uuid = { version = "1", features = ["v4"] }
 | **Connection Pooling** | Reuse TCP connections across chunks |
 | **TCP Tuning** | TCP_NODELAY, keepalive settings |
 | **Zero-Copy Write** | Direct file writes without buffering |
+| **Crash Recovery** | Auto-resume from `.progress_{chunk}` files |
+| **Smart Retries** | 5 retries with exponential backoff (1s→60s) |
 
 ---
 
@@ -288,22 +292,8 @@ src-tauri/target/release/
 ## Screenshots
 
 ### Main Window
-```
-┌────────────────────────────────────────────────────────────┐
-│ �_downloads OpenDM                              _ □ X    │
-├────────────────────────────────────────────────────────────┤
-│ [+ Add URL] [▶ Start] [⏸ Pause] [■ Stop] [🗑 Delete] ⚙  │
-├────────────┬──────────────────────────────────────────────┤
-│ CATEGORIES │  File Name     Size   Progress    Speed  ▼ │
-│ ○ All (1)  │  test.zip     100MB   45% ████░   5MB/s    │
-│ ● Download │                                                 │
-│ ○ Complete │                                                 │
-│ ○ Queued   │                                                 │
-│ ○ Scheduled│                                                 │
-├────────────┴──────────────────────────────────────────────┤
-│ Downloads: 1 │ Speed: 5 MB/s │ Total: 0 B                │
-└────────────────────────────────────────────────────────────┘
-```
+
+![OpenDM Main Window](public/Screenshot_ui.png)
 
 ### Add Download Dialog
 ```
@@ -335,6 +325,8 @@ src-tauri/target/release/
 - [x] Progress tracking
 - [x] Basic UI (IDM-compatible)
 - [x] System tray integration
+- [x] Crash-safe progress (periodic saves)
+- [x] Smart retries with exponential backoff
 
 ### Version 1.1.0 (Planned)
 - [ ] Download queue management
