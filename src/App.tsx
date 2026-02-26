@@ -1,4 +1,4 @@
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { invoke } from '@tauri-apps/api/core';
 import { listen } from '@tauri-apps/api/event';
 import { Toolbar } from './components/Toolbar';
@@ -7,6 +7,7 @@ import { DownloadList } from './components/DownloadList';
 import { AddUrlDialog } from './components/AddUrlDialog';
 import { ProgressDialog } from './components/ProgressDialog';
 import { StatusBar } from './components/StatusBar';
+import { DownloadCompletePopup, shouldShowCompletePopup } from './components/DownloadCompletePopup';
 import { useDownloadStore } from './stores/downloadStore';
 import { Download, ChunkProgress } from './types/download';
 
@@ -32,7 +33,8 @@ interface DownloadEvent {
 }
 
 export default function App() {
-  const { addDownload, updateDownload, removeDownload, selectedId } = useDownloadStore();
+  const { addDownload, updateDownload, removeDownload, selectedId, setAddDialogOpen } = useDownloadStore();
+  const [completedDownload, setCompletedDownload] = useState<Download | null>(null);
 
   useEffect(() => {
     const unlistenProgress = listen<DownloadProgressEvent>('download-progress', (event) => {
@@ -53,6 +55,32 @@ export default function App() {
         speed: 0,
         completedAt: new Date().toISOString(),
       });
+
+      // Show completion popup
+      if (shouldShowCompletePopup()) {
+        const fullDownload: Download = {
+          id: download.id,
+          url: download.url,
+          filename: download.filename,
+          filepath: download.filepath,
+          totalSize: download.totalSize,
+          downloadedSize: download.totalSize,
+          speed: 0,
+          status: 'completed',
+          chunks: download.chunks,
+          createdAt: new Date().toISOString(),
+          completedAt: new Date().toISOString(),
+          resumeSupported: download.resumeSupported,
+        };
+        setCompletedDownload(fullDownload);
+
+        // Handle "show in folder" option
+        const showInFolder = localStorage.getItem('opendm_showInFolderWhenComplete');
+        if (showInFolder === 'true') {
+          invoke('open_file_location', { path: download.filepath });
+          localStorage.removeItem('opendm_showInFolderWhenComplete');
+        }
+      }
     });
 
     const unlistenError = listen<{ id: string; error: string }>('download-error', (event) => {
@@ -129,7 +157,14 @@ export default function App() {
     }
   };
 
+  const handleCloseCompletePopup = () => {
+    setCompletedDownload(null);
+  };
 
+  const handleDownloadAnother = () => {
+    setCompletedDownload(null);
+    setAddDialogOpen(true);
+  };
 
   return (
     <div className="app-container">
@@ -146,6 +181,13 @@ export default function App() {
       <StatusBar />
       <AddUrlDialog />
       <ProgressDialog />
+      {completedDownload && (
+        <DownloadCompletePopup
+          download={completedDownload}
+          onClose={handleCloseCompletePopup}
+          onDownloadAnother={handleDownloadAnother}
+        />
+      )}
     </div>
   );
 }
